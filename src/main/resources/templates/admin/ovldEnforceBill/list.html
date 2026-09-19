@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.pollix.at/thymeleaf/shiro">
+<head>
+    <th:block th:include="include :: header('治超处理单列表')"/>
+</head>
+<body class="pear-container">
+<div class="layui-card">
+    <div class="layui-card-body">
+        <form class="layui-form" action="">
+            <div class="layui-form-item">
+                <label class="layui-form-label">所属站点</label>
+                <div class="layui-input-inline">
+                    <select name="siteId">
+                        <option value="">全部</option>
+                        <option th:each="site : ${siteList}" th:value="${site.id}" th:text="${site.siteName}"></option>
+                    </select>
+                </div>
+                <label class="layui-form-label">处理状态</label>
+                <div class="layui-input-inline">
+                    <select name="status">
+                        <option value="">全部</option>
+                        <option value="0">待处理</option>
+                        <option value="1">已处理</option>
+                        <option value="2">已办结</option>
+                    </select>
+                </div>
+                <button class="pear-btn pear-btn-md pear-btn-primary" lay-submit lay-filter="ovldEnforceBill-query">
+                    <i class="layui-icon layui-icon-search"></i>
+                    查询
+                </button>
+                <button type="reset" class="pear-btn pear-btn-md">
+                    <i class="layui-icon layui-icon-refresh"></i>
+                    重置
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+<div class="layui-card">
+    <div class="layui-card-body">
+        <table id="ovldEnforceBill-table" lay-filter="ovldEnforceBill-table"></table>
+    </div>
+</div>
+</body>
+
+<script type="text/html" id="ovldEnforceBill-toolbar">
+    <button shiro:hasPermission="ovld:ovldEnforceBill:register" class="pear-btn pear-btn-primary pear-btn-md" lay-event="add">
+        <i class="layui-icon layui-icon-add-1"></i>
+        登记
+    </button>
+    <button shiro:hasPermission="ovld:ovldEnforceBill:remove" class="pear-btn pear-btn-danger pear-btn-md" lay-event="batchRemove">
+        <i class="layui-icon layui-icon-delete"></i>
+        删除
+    </button>
+</script>
+
+<script type="text/html" id="ovldEnforceBill-bar">
+    <button shiro:hasPermission="ovld:ovldEnforceBill:edit" class="pear-btn pear-btn-primary pear-btn-sm" lay-event="edit" title="修改"><i class="layui-icon layui-icon-edit"></i>
+    </button>
+    <button shiro:hasPermission="ovld:ovldEnforceBill:remove" class="pear-btn pear-btn-danger pear-btn-sm" lay-event="remove" title="删除"><i class="layui-icon layui-icon-delete"></i>
+    </button>
+</script>
+
+<script type="text/html" id="ovldEnforceBill-status">
+    {{# if (d.status == 0) { }}
+    <span class="layui-badge layui-bg-orange">待处理</span>
+    {{# } else if (d.status == 1) { }}
+    <span class="layui-badge layui-bg-blue">已处理</span>
+    {{# } else if (d.status == 2) { }}
+    <span class="layui-badge layui-bg-green">已办结</span>
+    {{# } }}
+</script>
+
+<th:block th:include="include :: footer"/>
+<script>
+    layui.use(['table', 'form', 'jquery'], function () {
+        let table = layui.table;
+        let form = layui.form;
+        let $ = layui.jquery;
+
+        let MODULE_PATH = rootPath+"/OvldEnforceBillController/";
+        let cols = [
+            [
+                {type: 'checkbox'},
+                {title: '处理单号', field: 'billNo', align: 'center'},
+                {title: '站点编号', field: 'siteNo', align: 'center'},
+                {title: '超限吨位', field: 'qty', align: 'center'},
+                {title: '罚款金额', field: 'fineAmt', align: 'center'},
+                {title: '处理状态', field: 'status', align: 'center', templet: '#ovldEnforceBill-status'},
+                {title: '创建时间', field: 'createTime', align: 'center'},
+                {title: '备注', field: 'remark', align: 'center'},
+                {title: '操作', toolbar: '#ovldEnforceBill-bar', align: 'center'}
+            ]
+        ]
+
+        //table表单列表
+        table.render({
+            elem: '#ovldEnforceBill-table',
+            url: MODULE_PATH + 'list',
+            page: true,
+            method: 'get',
+            cols: cols,
+            skin: 'line',
+            toolbar: '#ovldEnforceBill-toolbar',
+            defaultToolbar: [{
+                layEvent: 'refresh',
+                icon: 'layui-icon-refresh',
+            }, 'filter', 'print', 'exports']
+        });
+
+        //table图标事件绑定
+        table.on('tool(ovldEnforceBill-table)', function (obj) {
+            if (obj.event === 'remove') {
+                window.remove(obj);
+            } else if (obj.event === 'edit') {
+                window.edit(obj);
+            }
+        });
+
+        //table工具栏绑定
+        table.on('toolbar(ovldEnforceBill-table)', function (obj) {
+            if (obj.event === 'add') {
+                window.add();
+            } else if (obj.event === 'refresh') {
+                window.refresh();
+            } else if (obj.event === 'batchRemove') {
+                window.batchRemove(obj);
+            }
+        });
+
+        //查询按钮绑定
+        form.on('submit(ovldEnforceBill-query)', function (data) {
+            table.reload('ovldEnforceBill-table', {page: {curr: 1}, where: data.field})
+            return false;
+        });
+
+        //登记
+        window.add = function () {
+            layer.open({
+                type: 2,
+                title: '登记',
+                shade: 0.1,
+                area: ['500px', '500px'],
+                content: MODULE_PATH + 'add'
+            });
+        }
+        //修改
+        window.edit = function (obj) {
+            layer.open({
+                type: 2,
+                title: '修改',
+                shade: 0.1,
+                area: ['500px', '500px'],
+                content: MODULE_PATH + 'edit/' + obj.data['id']
+            });
+        }
+        //删除
+        window.remove = function (obj) {
+            layer.confirm('确定要删除该数据', {icon: 3, title: '提示'}, function (index) {
+                layer.close(index);
+                let loading = layer.load();
+                $.ajax({
+                    url: MODULE_PATH + "remove?ids=" + obj.data['id'],
+                    dataType: 'json',
+                    type: 'delete',
+                    success: function (result) {
+                        layer.close(loading);
+                        if (result.code==200) {
+                            layer.msg(result.msg, {icon: 1, time: 1000}, function () {
+                                obj.del();
+                            });
+                        } else {
+                            layer.msg(result.msg, {icon: 2, time: 1000});
+                        }
+                    }
+                })
+            });
+        }
+
+        //批量删除
+        window.batchRemove = function (obj) {
+            let data = table.checkStatus(obj.config.id).data;
+            if (data.length === 0) {
+                layer.msg("未选中数据", {icon: 3, time: 1000});
+                return false;
+            }
+            let ids = "";
+            for (let i = 0; i < data.length; i++) {
+                ids += data[i].id + ",";
+            }
+            ids = ids.substr(0, ids.length - 1);
+            layer.confirm('确定要删除这些数据', {icon: 3, title: '提示'}, function (index) {
+                layer.close(index);
+                let loading = layer.load();
+                $.ajax({
+                    url: MODULE_PATH + "remove?ids=" + ids,
+                    dataType: 'json',
+                    type: 'delete',
+                    success: function (result) {
+                        layer.close(loading);
+                        if (result.code==200) {
+                            layer.msg(result.msg, {icon: 1, time: 1000}, function () {
+                                table.reload('ovldEnforceBill-table');
+                            });
+                        } else {
+                            layer.msg(result.msg, {icon: 2, time: 1000});
+                        }
+                    }
+                })
+            });
+        }
+
+        //刷新按钮
+        window.refresh = function () {
+            table.reload('ovldEnforceBill-table');
+        }
+    })
+</script>
+</html>

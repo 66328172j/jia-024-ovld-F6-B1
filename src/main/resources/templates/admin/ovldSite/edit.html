@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <th:block th:include="include :: header('治超站点档案修改')"/>
+</head>
+<body>
+<form class="layui-form" action="" th:object="${TOvldSite}">
+    <div class="mainBox">
+        <div class="main-container">
+            <div class="main-container">
+                <div class="layui-form-item layui-hide">
+                    <label class="layui-form-label">主键</label>
+                    <div class="layui-input-block">
+                        <input type="text" th:value="*{id}" name="id" autocomplete="off" class="layui-input">
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">站点编号</label>
+                    <div class="layui-input-block">
+                        <input th:value="*{siteNo}" type="text" name="siteNo" autocomplete="off" placeholder="站点编号" class="layui-input">
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">站点名称</label>
+                    <div class="layui-input-block">
+                        <input th:value="*{siteName}" type="text" name="siteName" autocomplete="off" placeholder="站点名称" class="layui-input">
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">站点类型</label>
+                    <div class="layui-input-block">
+                        <select name="siteType" th:field="*{siteType}">
+                            <option value="FIXED">固定站</option>
+                            <option value="MOBILE">流动稽查</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">所属路段</label>
+                    <div class="layui-input-block">
+                        <input th:value="*{roadName}" type="text" name="roadName" autocomplete="off" placeholder="所属路段" class="layui-input">
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">第一档上限</label>
+                    <div class="layui-input-block">
+                        <input th:value="*{th1Max}" type="text" name="th1Max" autocomplete="off" placeholder="第一档上限" class="layui-input">
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">第二档上限</label>
+                    <div class="layui-input-block">
+                        <input th:value="*{th2Max}" type="text" name="th2Max" autocomplete="off" placeholder="第二档上限" class="layui-input">
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">第三档上限</label>
+                    <div class="layui-input-block">
+                        <input th:value="*{th3Max}" type="text" name="th3Max" autocomplete="off" placeholder="第三档上限" class="layui-input">
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">档案状态</label>
+                    <div class="layui-input-block">
+                        <select name="status" th:field="*{status}">
+                            <option value="0">在用</option>
+                            <option value="1">停用</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">备注</label>
+                    <div class="layui-input-block">
+                        <input th:value="*{remark}" type="text" name="remark" autocomplete="off" placeholder="备注" class="layui-input">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="bottom">
+        <div class="button-container">
+            <button type="submit" class="layui-btn layui-btn-normal layui-btn-sm" lay-submit=""
+                    lay-filter="ovldSite-update">
+                <i class="layui-icon layui-icon-ok"></i>
+                提交
+            </button>
+            <button type="reset" class="layui-btn layui-btn-primary layui-btn-sm">
+                <i class="layui-icon layui-icon-refresh"></i>
+                重置
+            </button>
+        </div>
+    </div>
+</form>
+<th:block th:include="include :: footer"/>
+<script>
+    layui.use(['form', 'jquery'], function () {
+        let form = layui.form;
+        let $ = layui.jquery;
+        let MODULE_PATH = rootPath+"/OvldSiteController";
+
+        form.on('submit(ovldSite-update)', function (data) {
+            let loader = layer.load();
+            $.ajax({
+                url: MODULE_PATH+'/edit',
+                data: data.field,
+                dataType: 'json',
+                contentType: 'application/x-www-form-urlencoded',
+                type: 'post',
+                success: function (result) {
+                    if (result.code==200) {
+                        layer.msg(result.msg, {icon: 1, time: 1000}, function () {
+                            parent.layer.close(parent.layer.getFrameIndex(window.name));//关闭当前页
+                            parent.layui.table.reload("ovldSite-table");
+                            layer.close(loader);
+                        });
+                    } else {
+                        layer.msg(result.msg, {icon: 2, time: 1000});
+                        layer.close(loader);
+                    }
+                }
+            })
+            return false;
+        });
+    })
+</script>
+</body>
+</html>
